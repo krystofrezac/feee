@@ -7,3 +7,7 @@ export const readDir = (path) => {
 		item.isFile()
 	])
 }
+
+export const getArgv = () => {
+	return process.argv.slice(2)
+}
