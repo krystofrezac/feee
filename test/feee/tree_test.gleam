@@ -28,7 +28,12 @@ pub fn move_up_test() {
       // [0]
       tree.Dir(name: "a", open: True, children: [
         // [0, 0]
-        tree.File(name: "a_a"),
+        tree.Dir(name: "a_a", open: True, children: [
+          // [0, 0, 0]
+          tree.File(name: "a_a_a"),
+          // [1, 0, 0]
+          tree.File(name: "a_a_b"),
+        ]),
       ]),
       // [1]
       tree.Dir(name: "b", open: False, children: [
@@ -46,7 +51,7 @@ pub fn move_up_test() {
 
   let movement = fn(pointer: tree.Pointer) { tree.move_up(pointer, tree) }
 
-  [[0, 2], [2], [1], [0, 0], [0], [0]]
+  [[0, 2], [2], [1], [1, 0, 0], [0, 0, 0], [0, 0], [0], [0]]
   |> test_movement(start: [1, 2], movement: movement)
 }
 
@@ -79,6 +84,6 @@ pub fn move_down_test() {
 
   let movement = fn(pointer: tree.Pointer) { tree.move_down(pointer, tree) }
 
-  [[0, 0], [0, 0, 0], [1, 0, 0], [1], [2], [0, 2], [1, 2]]
+  [[0, 0], [0, 0, 0], [1, 0, 0], [1], [2], [0, 2], [1, 2], [1, 2]]
   |> test_movement(start: [0], movement: movement)
 }

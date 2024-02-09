@@ -16,22 +16,8 @@ pub fn move_up(pointer: Pointer, root_node: Node) -> Pointer {
   case pointer {
     // go to same level
     [index, ..rest] if index > 0 -> {
-      let new_pointer = [index - 1, ..rest]
-
-      new_pointer
-      |> get_at(root_node)
-      |> result.replace_error(pointer)
-      |> result.map(fn(current_node) {
-        case current_node {
-          Dir(open: True, children: children, ..) -> [
-            list.length(children)
-            |> int.subtract(1),
-            ..new_pointer
-          ]
-          _ -> new_pointer
-        }
-      })
-      |> result.unwrap_both
+      [index - 1, ..rest]
+      |> get_last_nested(root_node)
     }
     // go to parent, but not root
     [_, rest_head, ..rest_tail] -> {
@@ -42,17 +28,63 @@ pub fn move_up(pointer: Pointer, root_node: Node) -> Pointer {
   }
 }
 
+fn get_last_nested(pointer: Pointer, root_node: Node) -> Pointer {
+  let current_node =
+    pointer
+    |> io.debug
+    |> get_at(root_node)
+    |> io.debug
+
+  case current_node {
+    Dir(open: True, children: children, ..) ->
+      [
+        list.length(children)
+        |> int.subtract(1),
+        ..pointer
+      ]
+      |> get_last_nested(root_node)
+    _ -> pointer
+  }
+}
+
 pub fn move_down(pointer: Pointer, root_node: Node) -> Pointer {
   let current_node = get_at(pointer, root_node)
 
   case current_node {
     // go to children
-    Ok(Dir(open: True, children: [_, ..], ..)) -> [0, ..pointer]
-    Ok(_) -> {
+    Dir(open: True, children: [_, ..], ..) -> [0, ..pointer]
+    _ -> {
       pointer
-      |> get_down_same_level_pointer(root_node)
+      |> get_down_no_nest_pointer(root_node)
+      |> result.replace_error(pointer)
+      |> result.unwrap_both
     }
-    _ -> pointer
+  }
+}
+
+fn get_down_no_nest_pointer(
+  pointer: Pointer,
+  root_node: Node,
+) -> Result(Pointer, Nil) {
+  let parent = get_parent_node(pointer, root_node)
+
+  case parent {
+    // parent should always be dir
+    File(..) -> Ok(pointer)
+    Dir(children: children, ..) -> {
+      let parent_children_length = -1 + list.length(children)
+
+      case pointer {
+        // go to same level
+        [current_level, ..parent_levels] if current_level < parent_children_length ->
+          [current_level + 1, ..parent_levels]
+          |> Ok
+        // go to parent
+        [_, ..rest] -> get_down_no_nest_pointer(rest, root_node)
+        // teleporint to top is not the best UX
+        [] -> Error(Nil)
+      }
+    }
   }
 }
 
@@ -69,9 +101,11 @@ fn get_at_reversed(pointer: Pointer, node: Node) -> Result(Node, Nil) {
   }
 }
 
-fn get_at(pointer: Pointer, root_node: Node) -> Result(Node, Nil) {
+fn get_at(pointer: Pointer, root_node: Node) -> Node {
   list.reverse(pointer)
   |> get_at_reversed(root_node)
+  |> result.replace_error(root_node)
+  |> result.unwrap_both
 }
 
 fn get_parent_node(pointer: Pointer, root_node: Node) -> Node {
@@ -82,29 +116,4 @@ fn get_parent_node(pointer: Pointer, root_node: Node) -> Node {
 
   parent_pointer
   |> get_at(root_node)
-  |> result.replace_error(root_node)
-  |> result.unwrap_both
-}
-
-fn get_down_same_level_pointer(pointer: Pointer, root_node: Node) -> Pointer {
-  let parent = get_parent_node(pointer, root_node)
-
-  case parent {
-    // parent should always be dir
-    File(..) -> pointer
-    Dir(children: children, ..) -> {
-      let parent_children_length = -1 + list.length(children)
-
-      case pointer {
-        // go to same level
-        [current_level, ..parent_levels] if current_level < parent_children_length -> [
-          current_level + 1,
-          ..parent_levels
-        ]
-        // go to parent
-        [_, ..rest] -> get_down_same_level_pointer(rest, root_node)
-        [] -> pointer
-      }
-    }
-  }
 }
