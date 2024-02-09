@@ -1,5 +1,11 @@
-import gleam/io
+import feee/interop
+import feee/tui
 
 pub fn main() {
-  io.println("Hello from feee!")
+  let path = case interop.get_argv() {
+    [first_argv, ..] -> first_argv
+    _ -> "."
+  }
+
+  tui.run(path)
 }

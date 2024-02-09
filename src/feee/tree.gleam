@@ -1,5 +1,4 @@
 import gleam/list
-import gleam/io
 import gleam/int
 import gleam/result
 
@@ -31,9 +30,7 @@ pub fn move_up(pointer: Pointer, root_node: Node) -> Pointer {
 fn get_last_nested(pointer: Pointer, root_node: Node) -> Pointer {
   let current_node =
     pointer
-    |> io.debug
     |> get_at(root_node)
-    |> io.debug
 
   case current_node {
     Dir(open: True, children: children, ..) ->
@@ -72,7 +69,7 @@ fn get_down_no_nest_pointer(
     // parent should always be dir
     File(..) -> Ok(pointer)
     Dir(children: children, ..) -> {
-      let parent_children_length = -1 + list.length(children)
+      let parent_children_length = list.length(children) - 1
 
       case pointer {
         // go to same level
@@ -85,6 +82,34 @@ fn get_down_no_nest_pointer(
         [] -> Error(Nil)
       }
     }
+  }
+}
+
+pub fn toggle_open(pointer: Pointer, node: Node) -> Node {
+  pointer
+  |> list.reverse
+  |> toggle_open_reversed(node)
+}
+
+fn toggle_open_reversed(pointer: Pointer, node: Node) -> Node {
+  case #(node, pointer) {
+    #(Dir(open: open, name: name, children: children), []) ->
+      Dir(open: !open, name: name, children: children)
+    #(
+      Dir(open: open, name: name, children: children),
+      [current_level, ..next_levels],
+    ) ->
+      Dir(
+        open: open,
+        name: name,
+        children: list.index_map(children, fn(child, index) {
+          case current_level == index {
+            True -> toggle_open_reversed(next_levels, child)
+            False -> child
+          }
+        }),
+      )
+    _ -> node
   }
 }
 

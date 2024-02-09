@@ -1,0 +1,3 @@
+[submodule "lib/teashop"]
+	path = lib/teashop
+	url = git@github.com:erikareads/teashop.git
