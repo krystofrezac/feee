@@ -6,18 +6,29 @@ import teashop/command
 import teashop/key
 import feee/fs
 import feee/tree
+import feee/tui/viewport
 
 type Flags {
   Flags(path: String)
 }
 
 type Model {
-  Model(tree: tree.Node, cursor: Int)
+  Model(
+    tree: tree.Node,
+    cursor: Int,
+    screen_height: Int,
+    viewport: viewport.Model,
+  )
 }
 
 fn init(flags: Flags) {
   #(
-    Model(tree: fs.build_tree(flags.path), cursor: 0),
+    Model(
+      tree: fs.build_tree(flags.path),
+      cursor: 0,
+      screen_height: 1,
+      viewport: viewport.create_model(),
+    ),
     command.sequence([
       command.set_window_title("feee"),
       command.enter_alt_screen(),
@@ -33,15 +44,30 @@ fn update(model: Model, event: event.Event(Nil)) {
       let new_cursor =
         model.cursor
         |> tree.move_down(model.tree)
+      let new_viewport =
+        model.viewport
+        |> viewport.move_down(
+          cursor_position: model.cursor,
+          window_height: model.screen_height,
+        )
 
-      #(Model(..model, cursor: new_cursor), command.none())
+      #(
+        Model(..model, cursor: new_cursor, viewport: new_viewport),
+        command.none(),
+      )
     }
     event.Key(key.Char("k")) -> {
       let new_cursor =
         model.cursor
         |> tree.move_up()
+      let new_viewport =
+        model.viewport
+        |> viewport.move_up(cursor_position: model.cursor)
 
-      #(Model(..model, cursor: new_cursor), command.none())
+      #(
+        Model(..model, cursor: new_cursor, viewport: new_viewport),
+        command.none(),
+      )
     }
 
     event.Key(key.Char("o")) -> {
@@ -49,6 +75,10 @@ fn update(model: Model, event: event.Event(Nil)) {
         model.cursor
         |> tree.toggle_open(model.tree)
       #(Model(..model, tree: new_tree), command.none())
+    }
+
+    event.Resize(height: height, ..) -> {
+      #(Model(..model, screen_height: height), command.none())
     }
     _ -> #(model, command.none())
   }
@@ -114,6 +144,7 @@ fn view(model: Model) {
     position: 0,
     indent: 0,
   )
+  |> viewport.view(screen_height: model.screen_height, model: model.viewport)
 }
 
 pub fn run(path: String) {
