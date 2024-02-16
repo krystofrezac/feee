@@ -2,9 +2,9 @@ import gleeunit/should
 import feee/tree
 
 fn test_movement(
-  expected expected_positions: List(tree.Pointer),
-  start start_position: tree.Pointer,
-  movement movement: fn(tree.Pointer) -> tree.Pointer,
+  expected expected_positions: List(Int),
+  start start_position: Int,
+  movement movement: fn(Int) -> Int,
 ) {
   case expected_positions {
     [] -> Nil
@@ -24,66 +24,60 @@ fn test_movement(
 
 pub fn move_up_test() {
   let tree =
+    // 0
     tree.Dir(name: "root", open: True, children: [
-      // [0]
+      // 1
       tree.Dir(name: "a", open: True, children: [
-        // [0, 0]
+        // 2
         tree.Dir(name: "a_a", open: True, children: [
-          // [0, 0, 0]
+          // 3
           tree.File(name: "a_a_a"),
-          // [1, 0, 0]
+          // 4
           tree.File(name: "a_a_b"),
         ]),
       ]),
-      // [1]
-      tree.Dir(name: "b", open: False, children: [
-        // [0, 1]
-        tree.File(name: "b_a"),
-      ]),
-      // [2]
+      // 5
+      tree.Dir(name: "b", open: False, children: [tree.File(name: "b_a")]),
+      // 6
       tree.Dir(name: "c", open: True, children: [
-        // [0, 2]
+        // 7
         tree.File(name: "c_a"),
-        // [1, 2]
+        // 8
         tree.File(name: "c_b"),
       ]),
     ])
 
-  let movement = fn(pointer: tree.Pointer) { tree.move_up(pointer, tree) }
-
-  [[0, 2], [2], [1], [1, 0, 0], [0, 0, 0], [0, 0], [0], [0]]
-  |> test_movement(start: [1, 2], movement: movement)
+  [7, 6, 5, 4, 3, 2, 1, 0, 0]
+  |> test_movement(start: 8, movement: tree.move_up)
 }
 
 pub fn move_down_test() {
   let tree =
+    // 0
     tree.Dir(name: "root", open: True, children: [
-      // [0]
+      // 1
       tree.Dir(name: "a", open: True, children: [
-        // [0, 0]
+        // 2
         tree.Dir(name: "a_a", open: True, children: [
-          // [0, 0, 0]
+          // 3
           tree.File(name: "a_a_a"),
-          // [1, 0, 0]
+          // 4
           tree.File(name: "a_a_b"),
         ]),
       ]),
-      // [1]
-      tree.Dir(name: "b", open: False, children: [
-        // [0, 1]
-        tree.File(name: "b_a"),
-      ]),
-      // [2]
+      // 5
+      tree.Dir(name: "b", open: False, children: [tree.File(name: "b_a")]),
+      // 6
       tree.Dir(name: "c", open: True, children: [
-        // [0, 2]
+        // 7
         tree.File(name: "c_a"),
-        // [1, 2]
+        // 8
         tree.File(name: "c_b"),
       ]),
     ])
 
-  let movement = fn(pointer: tree.Pointer) { tree.move_down(pointer, tree) }
+  let movement = fn(pointer: Int) { tree.move_down(pointer, tree) }
 
-  [[0, 0], [0, 0, 0], [1, 0, 0], [1], [2], [0, 2], [1, 2], [1, 2]]
-  |> test_movement(start: [0], movement: movement)
+  [1, 2, 3, 4, 5, 6, 7, 8, 8]
+  |> test_movement(start: 0, movement: movement)
 }
